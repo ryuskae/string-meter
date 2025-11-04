@@ -30,6 +30,7 @@
       align-items:center;
       width:100%;
       max-width:760px;
+      position: relative; /* 추가 */
     }
     .meter{
       position:relative;
@@ -67,9 +68,26 @@
     .lbl.near-low{color:var(--near-low);font-weight:700}
     .lbl.near-high{color:var(--near-high);font-weight:700}
     @media (max-width:620px){
-      .center-area{flex-direction:column;gap:14px;}
-      .freq-tag{left:calc(100% + 10px);}  
+    .center-area{
+      flex-direction:column;
+      gap:14px;
     }
+    .meter{
+      height:65vh;          /* 모바일에서 너무 길지 않게 */
+      max-height:500px;
+    }
+    .scale{
+      position:absolute;
+      right:-130px;         /* 막대 오른쪽에 겹치게 */
+      top:50%;
+      transform:translateY(-50%);
+      height:65vh;
+      max-height:500px;
+    }
+    .freq-tag{
+      left:calc(100% + 8px);
+    }
+  }
   </style>
 </head>
 <body>
