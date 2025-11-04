@@ -1,534 +1,186 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>기타 튜너 (세로 막대형)</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>String Meter · Safe Guitar Tuner</title>
   <style>
-    :root {
-      --bg-main: #f9fafb;
-      --panel-bg: #ffffff;
-      --panel-border: #d1d5db;
-      --text-main: #111827;
-      --text-dim: #6b7280;
-      --accent-good-top: #4ade80;
-      --accent-good-btm: #16a34a;
-      --radius-lg: 16px;
-      --radius-md: 10px;
-      --tick-color: #9ca3af;
-      --ok-color: #065f46;       /* 초록 */
-      --near-low-color: #c99700; /* 조금 낮음 */
-      --near-high-color:#c62828; /* 조금 높음 */
+    :root { --ok:#1b5e20; --near-low:#c99700; --near-high:#c62828; }
+    body{
+      font-family:system-ui,-apple-system,"Apple SD Gothic Neo";
+      margin:0;
+      padding:28px 12px 18px;
+      color:#111;
+      background:#fafafa;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      box-sizing:border-box;
+      gap:20px;
+      text-align:center;
     }
-
-    body {
-      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", Roboto, sans-serif;
-      background: var(--bg-main);
-      color: var(--text-main);
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 24px;
+    h1{margin:0;font-size:1.8rem;font-weight:700}
+    h2{margin:4px 0 0;font-size:1rem;font-weight:400;color:#555}
+    #status{font-size:.78rem;color:#c62828;min-height:1em}
+    .center-area{
+      display:flex;
+      gap:28px;
+      justify-content:center;
+      align-items:center;
+      width:100%;
+      max-width:760px;
     }
-
-    header {
-      max-width: 360px;
-      text-align: center;
-      margin-bottom: 24px;
+    .meter{
+      position:relative;
+      width:90px;
+      height:80vh;
+      max-height:540px;
+      min-height:420px;
+      border:1px solid #ddd;
+      border-radius:14px;
+      background:linear-gradient(180deg,#f9f9f9,#f1f1f1);
+      flex:0 0 auto;
     }
-    h1 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-main);
+    .fill{
+      position:absolute;left:0;bottom:0;width:100%;height:0;
+      background:linear-gradient(180deg,#66bb6a,#2e7d32);
+      border-radius:14px 14px 10px 10px;transition:height .12s ease-out;
     }
-
-    /* 메인 패널 */
-    .tuner-shell {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-      padding: 24px 28px;
-
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 24px;
-      min-width: 260px;
+    .freq-tag{
+      position:absolute;left:-118px;top:50%;transform:translateY(-50%);
+      background:rgba(255,255,255,.9);padding:4px 10px;border-radius:10px;
+      border:1px solid #ddd;font-size:13px;white-space:nowrap;
     }
-
-    /* 막대 영역 */
-    .meterBox {
-      position: relative;
-      width: 72px;
-      height: 460px;
-      border: 1px solid var(--panel-border);
-      border-radius: var(--radius-lg);
-      background: linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);
-      overflow: hidden;
+    .scale{
+      position:relative;
+      height:80vh;
+      max-height:540px;
+      min-height:420px;
+      width:240px;
+      flex:0 0 auto;
     }
-    .meterFill {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 0;
-      background: linear-gradient(
-        180deg,
-        var(--accent-good-top) 0%,
-        var(--accent-good-btm) 100%
-      );
-      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
-      transition: height 0.12s ease;
-    }
-
-    /* 눈금 영역 */
-    .scale {
-      position: relative;
-      height: 460px;
-      width: 220px;
-      font-size: 14px;
-      line-height: 1.2;
-      color: var(--text-main);
-    }
-
-    .tick {
-      position: absolute;
-      left: 0;
-      height: 0;
-    }
-    .tick-inner {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transform: translateY(-50%);
-      user-select: none;
-    }
-    .dash {
-      width: 24px;
-      height: 2px;
-      background: var(--tick-color);
-      flex-shrink: 0;
-    }
-    .lbl {
-      font-size: 13px;
-      color: var(--text-main);
-      font-weight: 400;
-      transition: color 0.1s, font-weight 0.1s;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .lbl.ok {
-      color: var(--ok-color);
-      font-weight: 600;
-    }
-    .lbl.near-low {
-      color: var(--near-low-color);
-      font-weight: 600;
-    }
-    .lbl.near-high {
-      color: var(--near-high-color);
-      font-weight: 600;
-    }
-
-    .hint-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      font-size: 11px;
-      font-weight: 600;
-      line-height: 16px;
-      color: #fff;
-      background: #6b7280;
-      border-radius: 999px;
-      cursor: pointer;
-      flex-shrink: 0;
+    .tick{position:absolute;left:0;transform:translateY(50%)}
+    .dash{display:inline-block;width:22px;height:2px;background:#999;margin-right:8px}
+    .lbl{display:inline-block;color:#333;transition:color .1s,font-weight .1s}
+    .lbl.ok{color:var(--ok);font-weight:700}
+    .lbl.near-low{color:var(--near-low);font-weight:700}
+    .lbl.near-high{color:var(--near-high);font-weight:700}
+    @media (max-width:620px){
+      .center-area{flex-direction:column;gap:14px;}
+      .freq-tag{left:calc(100% + 10px);}  
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>기타 튜너</h1>
-  </header>
-
-  <section class="tuner-shell">
-    <div class="meterBox"><div id="fill" class="meterFill"></div></div>
+  <div>
+    <h1>String Meter</h1>
+    <h2>Safe Guitar Tuner</h2>
+  </div>
+  <div id="status"></div>
+  <div class="center-area">
+    <div class="meter">
+      <div id="fill" class="fill"></div>
+      <div id="freq" class="freq-tag">-- Hz</div>
+    </div>
     <div class="scale" id="scale"></div>
-  </section>
+  </div>
 
-<script>
-// === 기본 데이터 ===
-// 표준 6줄(1번이 가장 높은 줄: 얇은 줄, E4)
-const STRINGS = [
-  {no:1, name:"E4", f:329.6276},
-  {no:2, name:"B3", f:246.9417},
-  {no:3, name:"G3", f:195.9977},
-  {no:4, name:"D3", f:146.8324},
-  {no:5, name:"A2", f:110.0000},
-  {no:6, name:"E2", f:82.4069},
-];
+  <script src="https://cdn.jsdelivr.net/npm/aubiojs@0.1.1/build/aubio.min.js"></script>
+  <script>
+  const STR=[
+    {no:1,name:"E4",f:329.6276},
+    {no:2,name:"B3",f:246.9417},
+    {no:3,name:"G3",f:195.9977},
+    {no:4,name:"D3",f:146.8324},
+    {no:5,name:"A2",f:110.0000},
+    {no:6,name:"E2",f:82.4069},
+  ];
+  const CORR=[329.6276/331.3,246.9417/247.7,195.9977/197.5,146.8324/147.6,110.0/110.5,82.4069/82.9];
+  const SEMI=Math.pow(2,1/12);
+  const FMAX=STR[0].f*Math.pow(SEMI,4);
+  const FMIN=STR[5].f/Math.pow(SEMI,4);
+  const OK_CENTS=2,NEAR_CENTS=40;
+  const scaleEl=document.getElementById('scale');
+  const fillEl=document.getElementById('fill');
+  const freqTag=document.getElementById('freq');
+  const statusEl=document.getElementById('status');
+  const stringDom={};
 
-// 로그 스케일용 상/하한 (1번줄에서 +4반음, 6번줄에서 -4반음 정도 확장)
-const SEMI = Math.pow(2,1/12);
-const FMAX = STRINGS[0].f * Math.pow(SEMI,4);
-const FMIN = STRINGS[5].f / Math.pow(SEMI,4);
+  function log2(x){return Math.log(x)/Math.LN2}
+  function clamp(v,a,b){return v<a?a:v>b?b:v}
+  function cents(a,b){return 1200*Math.log2(a/b)}
+  function mapLogPct(f){const p=(log2(f)-log2(FMIN))/(log2(FMAX)-log2(FMIN));return clamp(p,0,1)}
+  function nearestIdx(f){let k=0,m=1e9;for(let i=0;i<STR.length;i++){const d=Math.abs(cents(f,STR[i].f));if(d<m){m=d;k=i}}return k;}
 
-// 센트 허용 범위 조정
-// abs diff <= 12 : 완전히 OK (초록), 괄호/숫자도 표시 안 함
-// 13~40 : 근접 (노랑/빨강), 괄호와 (+xx) 표시
-const OK_CENTS   = 12;   // 충분히 맞았다고 간주
-const NEAR_CENTS = 40;   // 근접 경고 범위(색/괄호)
+  function addTick(freq,label){
+    const t=document.createElement('div');t.className='tick';
+    t.style.bottom=(mapLogPct(freq)*100)+'%';
+    t.innerHTML=`<span class="dash"></span><span class="lbl">${label}</span>`;
+    scaleEl.appendChild(t);
+    return t.querySelector('.lbl');
+  }
+  (function layout(){
+    addTick(FMAX,'Danger!');
+    for(const s of STR){const el=addTick(s.f,`${s.no}번 (${s.name})`);stringDom[s.no]={el,base:`${s.no}번 (${s.name})`};}
+    addTick(FMIN,'Low');
+  })();
 
-// 소음 억제 & 업데이트 조건
-const SILENCE_MS   = 400;     // 조용한 시간 지속 시 다음 음 허용(ms)
-const LOUD_RMS     = 0.0005;  // 줄을 '퉁' 하고 친 수준 이상의 세기
-const QUIET_RMS    = 0.0002;  // 이보다 낮으면 조용하다고 봄
+  class MiniTuner{
+    constructor(a4){this.middleA=a4||440;this.bufferSize=4096;this.ready=false;}
+    init(){
+      this.audioContext=new (window.AudioContext||window.webkitAudioContext)();
+      this.analyser=this.audioContext.createAnalyser();
+      this.scriptProcessor=this.audioContext.createScriptProcessor(this.bufferSize,1,1);
+      const self=this;
+      aubio().then(function(a){
+        self.pitchDetector=new a.Pitch("default", self.bufferSize, 1, self.audioContext.sampleRate);
+        self.ready=true;
+      }).catch(function(err){statusEl.textContent='피치 엔진 로드 실패: '+err.message;});
+    }
+    start(){
+      const self=this;
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){statusEl.textContent='이 환경에서는 마이크를 사용할 수 없습니다.';return;}
+      navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+        const src=self.audioContext.createMediaStreamSource(stream);
+        src.connect(self.analyser);
+        self.analyser.connect(self.scriptProcessor);
+        self.scriptProcessor.connect(self.audioContext.destination);
+        self.scriptProcessor.addEventListener('audioprocess',function(e){
+          if(!self.ready)return;const input=e.inputBuffer.getChannelData(0);const freq=self.pitchDetector.do(input);if(freq&&self.onNoteDetected){self.onNoteDetected(freq);}});
+        if(self.audioContext.state==='suspended')self.audioContext.resume();
+      }).catch(err=>{console.error('마이크 오류:',err);statusEl.textContent='마이크를 사용할 수 없습니다.';});
+    }
+  }
 
-let audioCtx, analyser, source;
-let data;
-let running = false;
-let readyForNew = true;        // 새 음을 받을 준비 여부
-let lastLoudTime = 0;
-let lastQuietTime = 0;
+  let lastName=null;let lockUntil=0;const HOLD_MS=1200;
+  function renderGuitarFrequency(f){
+    const idx=nearestIdx(f), s=STR[idx];
+    fillEl.style.height=(mapLogPct(f)*100)+'%';
+    freqTag.textContent=f.toFixed(2)+' Hz';
+    for(const k in stringDom){const L=stringDom[k].el;L.classList.remove('ok','near-low','near-high');L.textContent=stringDom[k].base;}
+    const d=cents(f,s.f), ad=Math.abs(d), L=stringDom[s.no].el;
+    if(ad<=OK_CENTS){L.classList.add('ok');}
+    else if(ad<=NEAR_CENTS){L.classList.add(d<0?'near-low':'near-high');L.textContent=`${stringDom[s.no].base} (${d>0?'+':''}${d.toFixed(0)})`;}
+    lockUntil=performance.now()+HOLD_MS;
+  }
 
-// 마지막으로 확정된(고정된) 음
-let lastStableFreq   = null;
-let lastStableTime   = 0;
-let lastStableString = null;   // 0=1번줄, ... 5=6번줄
-
-// DOM 요소
-const fillEl  = document.getElementById('fill');
-const scaleEl = document.getElementById('scale');
-
-// === 수학 유틸 ===
-function log2(x){ return Math.log(x)/Math.LN2; }
-function clamp(v,min,max){ return v<min?min:(v>max?max:v); }
-function centsDiff(a,b){ return 1200 * Math.log2(a/b); }
-
-// frequency -> 막대 퍼센트(로그 스케일)
-function logMapPct(f){
-  const lf   = log2(Math.max(1e-12,f));
-  const lmin = log2(FMIN);
-  const lmax = log2(FMAX);
-  const p    = (lf-lmin)/(lmax-lmin);
-  return clamp(p,0,1);
-}
-
-// === 눈금 UI 구성 ===
-// stringElems: [ { s:{no,name,f}, el:HTMLElement, baseText:string } ]
-const stringElems = [];
-
-function addTick(freq,label,isFirstString){
-  const pct = logMapPct(freq);
-  const t = document.createElement('div');
-  t.className = 'tick';
-  t.style.bottom = (pct*100)+'%';
-
-  const inner = document.createElement('div');
-  inner.className='tick-inner';
-
-  const dash=document.createElement('div');
-  dash.className='dash';
-
-  const lbl=document.createElement('div');
-  lbl.className='lbl';
-
-  if(isFirstString){
-    const textNode = document.createElement('span');
-    textNode.textContent = label;
-
-    const hint = document.createElement('span');
-    hint.className='hint-btn';
-    hint.textContent='?';
-    hint.title = '1번줄은 기타의 가장 아래에 위치한 줄입니다.';
-    hint.onclick = ()=>{
-      alert('1번줄은 기타의 가장 아래에 위치한 줄입니다.');
+  const tuner=new MiniTuner(440);
+  tuner.init();
+  document.addEventListener('DOMContentLoaded',()=>{
+    tuner.onNoteDetected=function(freq){
+      const now=performance.now();
+      if(freq<70||freq>500)return;
+      const idx=nearestIdx(freq);
+      const corrected=freq*(CORR[idx]||1.0);
+      const s=STR[idx];
+      const name=`${s.no}`;
+      if(name!==lastName){lastName=name;return;}
+      if(now<lockUntil)return;
+      renderGuitarFrequency(corrected);
     };
-
-    lbl.appendChild(textNode);
-    lbl.appendChild(hint);
-  } else {
-    lbl.textContent = label;
-  }
-
-  inner.appendChild(dash);
-  inner.appendChild(lbl);
-  t.appendChild(inner);
-  scaleEl.appendChild(t);
-  return lbl;
-}
-
-function layoutScale(){
-  scaleEl.innerHTML='';
-  stringElems.length=0;
-
-  // 상/하한 눈금
-  addTick(FMAX,'상한(+4반음)', false);
-
-  // 실제 줄들
-  for(const s of STRINGS){
-    const isFirst = (s.no === 1);
-    const lblEl = addTick(s.f, `${s.no}번줄 (${s.name})`, isFirst);
-    stringElems.push({s,el:lblEl,baseText:`${s.no}번줄 (${s.name})`});
-  }
-
-  addTick(FMIN,'하한(-4반음)', false);
-}
-layoutScale();
-
-// === 오디오 초기화 ===
-async function initAudio(){
-  if(running) return;
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    source   = audioCtx.createMediaStreamSource(stream);
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 16384; // 높은 해상도
-    source.connect(analyser);
-
-    data = new Float32Array(analyser.fftSize);
-
-    running = true;
-    loop();
-  }catch(e){
-    alert('마이크 접근 실패: ' + e.message);
-  }
-}
-
-// 페이지 로드 시 마이크 권한 요청
-window.addEventListener('DOMContentLoaded', initAudio);
-
-// === 신호 처리 ===
-// Hann 창: 배음/노이즈 영향 완화
-function hannWindow(arr){
-  const N=arr.length;
-  const out=new Float32Array(N);
-  for(let i=0;i<N;i++){
-    const w=0.5*(1-Math.cos(2*Math.PI*i/(N-1)));
-    out[i]=arr[i]*w;
-  }
-  return out;
-}
-
-// YIN 기반 피치 검출
-function detectPitchYIN(buf, sampleRate){
-  const N = buf.length;
-  const tauMax = Math.min(Math.floor(sampleRate/60), N-2);
-
-  const diff = new Float32Array(tauMax+1);
-  for(let tau=1;tau<=tauMax;tau++){
-    let sum=0;
-    for(let i=0;i<N-tau;i++){
-      const d = buf[i]-buf[i+tau];
-      sum += d*d;
-    }
-    diff[tau]=sum;
-  }
-
-  const cmnd = new Float32Array(tauMax+1);
-  cmnd[0]=1;
-  let run=0;
-  for(let tau=1;tau<=tauMax;tau++){
-    run += diff[tau];
-    cmnd[tau] = diff[tau]*tau/run;
-  }
-
-  const thresh = 0.08;
-  let tau=-1;
-  for(let t=2;t<=tauMax;t++){
-    if(cmnd[t] < thresh){ tau=t; break; }
-  }
-  if(tau===-1){
-    return {freq:-1, conf:0};
-  }
-
-  const freq = sampleRate / tau;
-  const conf = 1 - cmnd[tau];
-  return {freq, conf};
-}
-
-// 가장 가까운 줄 인덱스(0 = 1번줄 ... 5 = 6번줄)
-function nearestStringIdx(f){
-  let best=0, md=1e9;
-  for(let i=0;i<STRINGS.length;i++){
-    const d = Math.abs(centsDiff(f, STRINGS[i].f));
-    if(d<md){ md=d; best=i; }
-  }
-  return best;
-}
-
-// 막대/라벨 업데이트 + 안정 상태 저장
-function setHoldDisplay(f){
-  const pct = logMapPct(f);
-  fillEl.style.height = `${Math.round(pct*100)}%`;
-
-  const idx = nearestStringIdx(f);
-  const s   = STRINGS[idx];
-
-  // 모든 라벨 초기화
-  for(const o of stringElems){
-    if(o.s.no === 1){
-      // 1번줄은 hint 버튼 때문에 텍스트 노드를 건드리지 않고 class만 초기화
-      o.el.className = 'lbl';
-      const firstChild = o.el.childNodes[0];
-      if(firstChild && firstChild.nodeType === Node.ELEMENT_NODE){
-        firstChild.textContent = `${o.s.no}번줄 (${o.s.name})`;
-      }
-    } else {
-      o.el.textContent = o.baseText;
-      o.el.className   = 'lbl';
-    }
-  }
-
-  const diff = centsDiff(f, s.f);
-  const abs  = Math.abs(diff);
-
-  // abs <= 12 cent : 완전 OK → 초록, 괄호/숫자 표시 안 함
-  if(abs <= OK_CENTS){
-    stringElems[idx].el.classList.add('ok');
-    if(s.no === 1){
-      const firstChild = stringElems[idx].el.childNodes[0];
-      if(firstChild && firstChild.nodeType === Node.ELEMENT_NODE){
-        firstChild.textContent = `${s.no}번줄 (${s.name})`;
-      }
-    } else {
-      stringElems[idx].el.textContent = `${s.no}번줄 (${s.name})`;
-    }
-  }
-  // 13~40 cent : 근접(노랑/빨강) → 괄호와 (+xx) 표시
-  else if(abs <= NEAR_CENTS){
-    const sign = diff>0? '+':'';
-    if(diff < 0){
-      stringElems[idx].el.classList.add('near-low');
-    } else {
-      stringElems[idx].el.classList.add('near-high');
-    }
-
-    if(s.no === 1){
-      const firstChild = stringElems[idx].el.childNodes[0];
-      if(firstChild && firstChild.nodeType === Node.ELEMENT_NODE){
-        firstChild.textContent = `${s.no}번줄 (${s.name}) (${sign}${diff.toFixed(0)})`;
-      }
-    } else {
-      stringElems[idx].el.textContent = `${s.no}번줄 (${s.name}) (${sign}${diff.toFixed(0)})`;
-    }
-  }
-  // abs > 40 : 색상/괄호 없음 (기본 상태 유지)
-  else {
-    if(s.no === 1){
-      const firstChild = stringElems[idx].el.childNodes[0];
-      if(firstChild && firstChild.nodeType === Node.ELEMENT_NODE){
-        firstChild.textContent = `${s.no}번줄 (${s.name})`;
-      }
-    }
-  }
-
-  // 안정 상태 업데이트
-  lastStableFreq   = f;
-  lastStableTime   = performance.now();
-  lastStableString = idx;
-}
-
-// === 메인 루프 ===
-function loop(){
-  if(!running) return;
-
-  analyser.getFloatTimeDomainData(data);
-
-  // RMS 계산 (소음 게이트)
-  let rms=0;
-  for(let i=0;i<data.length;i++){
-    rms += data[i]*data[i];
-  }
-  rms = Math.sqrt(rms/data.length);
-
-  const now = performance.now();
-  if(rms > LOUD_RMS)  lastLoudTime  = now;
-  if(rms < QUIET_RMS) lastQuietTime = now;
-  if(now - lastQuietTime > SILENCE_MS){
-    // 한동안 조용 → 다음 음 새로 받아도 됨
-    readyForNew = true;
-  }
-
-  if(rms >= LOUD_RMS){
-    // 충분히 큰 입력에서만 피치 계산
-    const win  = hannWindow(data);
-    const det  = detectPitchYIN(win, audioCtx.sampleRate);
-    let fRaw   = det.freq;
-    const conf = det.conf;
-
-    if(fRaw>0 && conf>0.05){
-      let idxTmp = nearestStringIdx(fRaw);
-
-      // 줄별 보정값 (최신 측정 기반)
-      const fineAdjust = {
-        1: 0.9890851733809384,   // 1번줄(E4) 추가 보정 (-12¢ 더 낮춤)
-        2: 0.9982686325973925,   // 2번줄(B3)
-        3: 0.9925190283573949,   // 3번줄(G3)
-        4: 1.0,                  // 4번줄(D3)
-        5: 0.9948148855014218,   // 5번줄(A2)
-        6: 0.9942404238175473    // 6번줄(E2)
-      };
-
-      let fAdj = fRaw * (fineAdjust[idxTmp+1] || 1);
-
-      // 1번줄(E4) 특수 안정화: 갑작스러운 옥타브 다운 방지
-      if(idxTmp === 0){
-        if(fAdj > 150 && fAdj < 260){
-          if(lastStableString === 0 && (now - lastStableTime) < 500){
-            // 직전에도 1번줄로 안정 → 급락 무시
-            fAdj = lastStableFreq;
-          } else {
-            // 배음으로 잘못 잡힌 저음일 가능성 → 옥타브 올리기
-            fAdj *= 2;
-          }
-        }
-      }
-
-      // 1번줄이 직전에 안정됐는데 갑자기 확 떨어지는 값이면 무시
-      if(lastStableString === 0 && (now - lastStableTime) < 500){
-        if(lastStableFreq && fAdj < lastStableFreq * 0.7){
-          fAdj   = lastStableFreq;
-          idxTmp = 0;
-        }
-      }
-
-      // forceUpdate: 같은 줄에서 음을 낮추는 중이면 즉시 반영해서
-      // 막대가 꼭대기에 고정된 채 안 내려오는 문제 해결
-      let forceUpdate = false;
-      if(lastStableFreq && lastStableString === idxTmp){
-        if(fAdj < lastStableFreq * 0.95){ // 5% 이상 내려갔으면
-          forceUpdate = true;
-        }
-      }
-
-      const pluckWindowOK   = ((now - lastLoudTime) < 200);
-      const normalUpdateOK  = (readyForNew && pluckWindowOK);
-
-      if((normalUpdateOK || forceUpdate) && fAdj>0){
-        setHoldDisplay(fAdj);
-        if(normalUpdateOK){
-          // 평소: 다음 음까지 잠금
-          readyForNew = false;
-        } else {
-          // forceUpdate: 같은 줄 미세 조정 중 → readyForNew 유지
-        }
-      }
-    }
-  }
-
-  requestAnimationFrame(loop);
-}
-</script>
+    tuner.start();
+  });
+  </script>
 </body>
 </html>
