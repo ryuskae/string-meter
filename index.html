@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,7 +30,7 @@
       align-items:center;
       width:100%;
       max-width:760px;
-      position: relative; /* 추가 */
+      position: relative;
     }
     .meter{
       position:relative;
@@ -73,12 +73,12 @@
       gap:14px;
     }
     .meter{
-      height:65vh;          /* 모바일에서 너무 길지 않게 */
+      height:65vh;
       max-height:500px;
     }
     .scale{
       position:absolute;
-      right:-130px;         /* 막대 오른쪽에 겹치게 */
+      right:-130px;
       top:50%;
       transform:translateY(-50%);
       height:65vh;
@@ -95,7 +95,7 @@
     <h1>String Meter</h1>
     <h2>Safe Guitar Tuner</h2>
      <p style="font-size:0.85rem; color:#666; margin-top:6px;">
-    조율 시 ±5 Cent 이내의 오차는 무방합니다.
+    A deviation within ±5 cents is acceptable during tuning.
   </p>
   </div>
   <div id="status"></div>
@@ -143,7 +143,7 @@
   }
   (function layout(){
     addTick(FMAX,'Danger!');
-    for(const s of STR){const el=addTick(s.f,`${s.no}번 (${s.name})`);stringDom[s.no]={el,base:`${s.no}번 (${s.name})`};}
+    for(const s of STR){const el=addTick(s.f,`String ${s.no} (${s.name})`);stringDom[s.no]={el,base:`String ${s.no} (${s.name})`};}
     addTick(FMIN,'Low');
   })();
 
@@ -157,11 +157,11 @@
       aubio().then(function(a){
         self.pitchDetector=new a.Pitch("default", self.bufferSize, 1, self.audioContext.sampleRate);
         self.ready=true;
-      }).catch(function(err){statusEl.textContent='피치 엔진 로드 실패: '+err.message;});
+      }).catch(function(err){statusEl.textContent='Pitch engine load failed: '+err.message;});
     }
     start(){
       const self=this;
-      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){statusEl.textContent='이 환경에서는 마이크를 사용할 수 없습니다.';return;}
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){statusEl.textContent='Microphone not supported in this environment.';return;}
       navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
         const src=self.audioContext.createMediaStreamSource(stream);
         src.connect(self.analyser);
@@ -170,7 +170,7 @@
         self.scriptProcessor.addEventListener('audioprocess',function(e){
           if(!self.ready)return;const input=e.inputBuffer.getChannelData(0);const freq=self.pitchDetector.do(input);if(freq&&self.onNoteDetected){self.onNoteDetected(freq);}});
         if(self.audioContext.state==='suspended')self.audioContext.resume();
-      }).catch(err=>{console.error('마이크 오류:',err);statusEl.textContent='마이크를 사용할 수 없습니다.';});
+      }).catch(err=>{console.error('Microphone error:',err);statusEl.textContent='Unable to access the microphone.';});
     }
   }
 
